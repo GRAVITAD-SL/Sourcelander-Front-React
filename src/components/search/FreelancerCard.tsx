@@ -66,9 +66,9 @@ export default function FreelancerCard({
             </p>
 
             {/* Ubicación */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground max-w-[140px]">
               <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="whitespace-normal break-words" title={location}>
+              <span className="truncate" title={location}>
                 {location}
               </span>
             </div>

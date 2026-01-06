@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import LayoutContent from "./LayoutContent";
 import { Toaster } from "sonner";
+import BackToTop from "@/components/ui/BackToTop";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers>
           <LayoutContent>{children}</LayoutContent>
+          <BackToTop />
           <Toaster
             position="bottom-right"
             richColors

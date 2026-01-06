@@ -13,6 +13,26 @@ Proyecto web completo y escalable construido con Next.js 14+, arquitectura modul
 
 ---
 
+## Environment Variables
+
+### Development (.env.local)
+
+```env
+NEXT_PUBLIC_STRAPI_URL=http://localhost:1337/api
+NEXT_PUBLIC_STRAPI_TOKEN=your-strapi-api-token
+```
+
+### Production
+
+```env
+NEXT_PUBLIC_STRAPI_URL=https://your-strapi-domain.com/api
+NEXT_PUBLIC_STRAPI_TOKEN=your-production-api-token
+```
+
+> **Note**: Generate the API token in Strapi Admin → Settings → API Tokens
+
+---
+
 ## 🧱 Arquitectura del Proyecto
 
 El proyecto sigue una arquitectura **modular por dominio (DDD)** combinada con componentes compartidos:
