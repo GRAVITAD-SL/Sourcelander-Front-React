@@ -1,89 +1,87 @@
-# 🛒 Next.js eCommerce + Blog
+# Sourcelander Front
 
-Proyecto web completo y escalable construido con Next.js 14+, arquitectura modular por dominios (features), y componentes reutilizables con shadcn/ui.
-
----
-
-## Iniciar servidor de desarrollo
-
-- `npm run dev`: Iniciar servidor de desarrollo
-- `npm run test`: Ejecutar tests unitarios
-- `npm run build`: Compilar build de producción
-- `npm run lint && npm run format`: Linter + formateo
+Frontend de la plataforma Sourcelander (marketplace de freelancers), construido con **Next.js 16** (App Router, Turbopack) + **React 19** + **Tailwind CSS 4** + **shadcn/ui (Radix)** + **Zustand** + **React Query**.
 
 ---
 
-## Environment Variables
+## Requisitos
 
-### Development (.env.local)
+- Node.js **22.x** (Next 16 exige >= 20.9)
+- Backend Strapi corriendo (ver repo `sourcelander-backend-strapi`)
+
+## Arranque local
+
+```bash
+npm ci          # instalar dependencias limpias desde el lockfile
+npm run dev     # http://localhost:3200
+npm run build   # build de producción (debe pasar sin errores)
+npm run lint    # ESLint 10 (flat config), debe estar en 0 errores
+```
+
+### Variables de entorno (`.env.local`)
 
 ```env
+NEXT_PUBLIC_API_URL=http://localhost:1337
 NEXT_PUBLIC_STRAPI_URL=http://localhost:1337/api
-NEXT_PUBLIC_STRAPI_TOKEN=your-strapi-api-token
+NEXT_PUBLIC_STRAPI_TOKEN=<token de la DB local — crearlo en el admin de Strapi>
 ```
 
-### Production
-
-```env
-NEXT_PUBLIC_STRAPI_URL=https://your-strapi-domain.com/api
-NEXT_PUBLIC_STRAPI_TOKEN=your-production-api-token
-```
-
-> **Note**: Generate the API token in Strapi Admin → Settings → API Tokens
+> Los tokens son propios de cada DB: el token de producción NO sirve en local y viceversa.
 
 ---
 
-## 🧱 Arquitectura del Proyecto
+## Conexión con el backend
 
-El proyecto sigue una arquitectura **modular por dominio (DDD)** combinada con componentes compartidos:
-
-- `app/`: rutas del frontend, con layout por rol (admin, user)
-- `features/`: módulos independientes como auth, productos, carrito, etc.
-- `components/ui/`: base UI reutilizable (con shadcn/ui)
-- `hooks/`, `lib/`, `store/`, `types/`: herramientas compartidas entre features
-
-Esta arquitectura permite:
-
-- Separación clara de responsabilidades
-- Escalabilidad horizontal por dominio
-- Reutilización de lógica y UI
+- `src/services/axiosConfig.ts` — dos instancias de axios:
+  - `apiInstance` → `NEXT_PUBLIC_API_URL` + `/api` (auth users-permissions, búsqueda).
+  - `apiInstanceStrapi` → `NEXT_PUBLIC_STRAPI_URL` (contenido: categorías, artículos, home, global).
+- Búsqueda de freelancers: `GET /api/search/freelancers?query=...` (endpoint público del backend; dispara el scraper si no hay caché fresca).
+- ⚠️ La página `/freelancer` **no lee `?query=` de la URL** — el término vive en el store de Zustand (`src/store/search/searchStore.ts`) y se setea buscando desde el buscador de la UI.
 
 ---
 
-## 🧩 Estructura de Carpetas
+## Estructura
 
-```txt
-.
-├── app/                     # Rutas y layouts de Next.js
-│   ├── admin/              # Panel admin (protegido)
-│   ├── user/               # Panel usuario (protegido)
-│   ├── auth/               # Login / registro
-│   ├── shop/               # Tienda pública
-│   ├── blog/               # Blog
-│   ├── api/                # Rutas API (Next.js handlers)
-│   └── layout.tsx          # Layout global
-
+```
+src/
+├── app/                  # App Router: páginas (/, /freelancer, /auth/*, /cart, /profile, ...)
 ├── components/
-│   ├── ui/                 # Componentes base (shadcn/ui)
-│   ├── layout/             # Navbar, footer, sidebar
-│   └── icons/              # SVGs personalizados
-
-├── features/
-│   ├── auth/               # Módulo de autenticación
-│   ├── products/           # Módulo de productos
-│   ├── cart/               # Carrito de compras
-│   └── orders/             # Pedidos
-
-├── hooks/                  # Hooks globales (useAuth, useDebounce, etc.)
-├── lib/                    # Lógica auxiliar (api.ts, auth.ts, utils.ts)
-├── store/                  # Estado global con Zustand
-├── types/                  # Tipos globales compartidos
-├── public/                 # Archivos estáticos (logos, imágenes)
-├── tests/                  # Tests de integración o flujo (opcional)
-
-├── middleware.ts           # Protección de rutas por rol
-├── next.config.js
-├── tailwind.config.ts
-├── vitest.config.ts
-└── README.md               # Este archivo
+│   ├── ui/               # Componentes base shadcn/ui
+│   ├── search/           # Cards, carousel de recomendados, modal
+│   ├── common/           # Navbar, Footer, ProtectedRoute
+│   └── modals/           # Checkout, verificación de email, etc.
+├── hooks/                # useSearchResults, useInfiniteSearchResults, useAuthInit, useHydration
+├── store/                # Zustand: auth, search, cart, project
+├── services/             # axios config + auth service
+├── lib/                  # utils, mocks (searchData, mockRecommended, mockCompanies)
+├── interfaces/           # Tipos compartidos (UnifiedFreelancer, etc.)
+└── middleware.ts         # Protección de rutas (en Next 16 renombrar a proxy.ts — ver pendientes)
 ```
+
+## Convenciones relevantes
+
+- **Hidratación**: patrones con `useSyncExternalStore` (`useHydration`), nunca `setState` sincrónico en `useEffect` (reglas react-hooks v6 — lint en 0 errores es criterio de merge).
+- **Ids deterministas**: nada de `Math.random()` en render — usar `buildFreelancerFallbackId()` (`src/lib/utils.ts`).
+- **Lectura de localStorage**: dentro de timers asíncronos en effects (hidratación-segura).
+
+---
+
+## Despliegue (Dokploy)
+
+- Servicio **Frontend** (Application) → repo `GRAVITAD-SL/Sourcelander-Front-React`, rama `main`, Build Type: **Dockerfile** (Node 22, multi-stage).
+- Las `NEXT_PUBLIC_*` **se hornean en el build**: se configuran en el tab **Environment** de Dokploy (Dokploy las escribe como `.env` en el build context; Next las lee automáticamente). El Dockerfile no declara `ARG/ENV` para no pisarlas con vacío.
+- **Target stage**: vacío (usa el último stage `runner`).
+- Producción:
+  ```env
+  NEXT_PUBLIC_API_URL=https://sourcelander-strapi.gravitad.com
+  NEXT_PUBLIC_STRAPI_URL=https://sourcelander-strapi.gravitad.com/api
+  NEXT_PUBLIC_STRAPI_TOKEN=<token de la DB de producción>
+  ```
+- Flujo: todo a `dev` → PR `dev → main` → merge → Dokploy re-despliega producción.
+- Cambiar el token implica un **rebuild del front** (las NEXT_PUBLIC_* se hornean).
+
+## Pendientes conocidos
+
+- [ ] Migrar `src/middleware.ts` → `proxy.ts` (`npx @next/codemod@canary middleware-to-proxy .`) — la convención middleware está deprecada en Next 16.
+- [ ] `/freelancer` soporte de `?query=` por URL.
+- [ ] Warnings de `next/image` (width/height modificados con CSS) en Navbar/Footer.
