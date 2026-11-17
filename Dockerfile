@@ -8,16 +8,10 @@ COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # 2) Build
-# Las NEXT_PUBLIC_* se hornean en el build: se reciben como build args
-# (en Dokploy: Settings -> Build -> Build Args) y se fijan como ENV antes
-# de compilar, o la app saldría con URLs undefined.
+# Las NEXT_PUBLIC_* se hornean en el build. El canal es el .env que genera
+# Dokploy a partir del tab Environment (COPY . . lo incluye, y Next.js lo lee
+# automáticamente). No se declaran como ARG/ENV para no pisarlas con vacío.
 FROM node:22-alpine AS builder
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_STRAPI_URL
-ARG NEXT_PUBLIC_STRAPI_TOKEN
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_STRAPI_URL=$NEXT_PUBLIC_STRAPI_URL
-ENV NEXT_PUBLIC_STRAPI_TOKEN=$NEXT_PUBLIC_STRAPI_TOKEN
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
