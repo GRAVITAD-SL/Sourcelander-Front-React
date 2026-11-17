@@ -12,12 +12,12 @@ export const apiInstance = axios.create({
 });
 
 export const apiInstanceStrapi = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_STRAPI_URL}/api`,
-  timeout: 60000, // Timeout set to 20 seconds
+  baseURL: process.env.NEXT_PUBLIC_STRAPI_URL,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
-    ...(process.env.NEXT_PUBLIC_API_KEY
-      ? { Authorization: `Bearer ${process.env.NEXT_PUBLIC_API_KEY}` }
+    ...(process.env.NEXT_PUBLIC_STRAPI_TOKEN
+      ? { Authorization: `Bearer ${process.env.NEXT_PUBLIC_STRAPI_TOKEN}` }
       : {}),
   },
 });

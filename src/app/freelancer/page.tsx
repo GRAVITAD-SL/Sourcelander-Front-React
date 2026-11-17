@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container";
 import ContainerSmall from "@/components/common/ContainerSmall";
 import SearchInput from "@/components/search/SearchInput";
@@ -203,6 +204,7 @@ const mockFreelancers: UnifiedFreelancer[] = [
 ];
 
 export default function FreelancerPage() {
+  const router = useRouter();
   const {
     searchTerm: searchQuery,
     selectedCategory,
@@ -339,7 +341,7 @@ export default function FreelancerPage() {
     setSelectedFreelancer(null);
 
     if (freelancer.id) {
-      window.location.href = `/hire/${freelancer.id}`;
+      router.push(`/hire/${freelancer.id}`);
     }
   };
 

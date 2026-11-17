@@ -15,6 +15,7 @@ import { ShoppingCart } from "lucide-react";
 import { useCartStore, type Freelancer } from "@/store/cart/cartStore";
 import { toast } from "sonner";
 import { UnifiedFreelancer } from "@/interfaces";
+import { buildFreelancerFallbackId } from "@/lib/utils";
 
 interface AddToCartButtonProps {
   freelancer: UnifiedFreelancer;
@@ -36,8 +37,7 @@ export default function AddToCartButton({
 
   // Convert UnifiedFreelancer to Freelancer format
   const cartFreelancer: Freelancer = {
-    id:
-      freelancer.id || `freelancer-${Math.random().toString(36).substr(2, 9)}`,
+    id: freelancer.id || buildFreelancerFallbackId(freelancer.name),
     name: freelancer.name ?? "N/A",
     title: freelancer.title ?? freelancer.speciality ?? "Freelancer",
     avatar: freelancer.avatar ?? freelancer.imageUrl,

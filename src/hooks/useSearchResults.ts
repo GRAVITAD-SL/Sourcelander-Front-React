@@ -5,7 +5,7 @@ import {
   SearchFilters,
 } from "@/interfaces";
 import { useQuery } from "@tanstack/react-query";
-import { apiInstance } from "@/services/axiosConfig";
+import { apiInstanceStrapi } from "@/services/axiosConfig";
 // import { calculateMembershipYears } from "@/utils/membershipUtils";
 import { getRandomCompanies } from "@/lib/mockCompanies";
 import { generateFreelancerEducation } from "@/utils/educationGenerator";
@@ -190,7 +190,7 @@ const mockFreelancers: UnifiedFreelancer[] = [
 
 // Función para marcar datos como mockeados
 const markAsMockData = (
-  freelancers: UnifiedFreelancer[]
+  freelancers: UnifiedFreelancer[],
 ): UnifiedFreelancer[] => {
   return freelancers.map((freelancer) => ({
     ...freelancer,
@@ -212,9 +212,9 @@ const filterMockData = (filters: SearchFilters): UnifiedFreelancer[] => {
         (freelancer.title?.toLowerCase() || "").includes(query) ||
         freelancer.description.toLowerCase().includes(query) ||
         freelancer.skills?.some((skill) =>
-          skill.toLowerCase().includes(query)
+          skill.toLowerCase().includes(query),
         ) ||
-        false
+        false,
     );
   }
 
@@ -227,10 +227,10 @@ const filterMockData = (filters: SearchFilters): UnifiedFreelancer[] => {
           (freelancer.title?.toLowerCase() || "").includes(keyword) ||
           freelancer.description.toLowerCase().includes(keyword) ||
           freelancer.skills?.some((skill) =>
-            skill.toLowerCase().includes(keyword)
+            skill.toLowerCase().includes(keyword),
           ) ||
-          false
-      )
+          false,
+      ),
     );
   }
 
@@ -238,20 +238,20 @@ const filterMockData = (filters: SearchFilters): UnifiedFreelancer[] => {
   if (filters.location) {
     const location = filters.location.toLowerCase();
     filteredData = filteredData.filter((freelancer) =>
-      freelancer.location.toLowerCase().includes(location)
+      freelancer.location.toLowerCase().includes(location),
     );
   }
 
   // Filtrar por rango de precios
   if (filters.minRate) {
     filteredData = filteredData.filter(
-      (freelancer) => (freelancer.hourlyRate || 0) >= filters.minRate!
+      (freelancer) => (freelancer.hourlyRate || 0) >= filters.minRate!,
     );
   }
 
   if (filters.maxRate) {
     filteredData = filteredData.filter(
-      (freelancer) => (freelancer.hourlyRate || 0) <= filters.maxRate!
+      (freelancer) => (freelancer.hourlyRate || 0) <= filters.maxRate!,
     );
   }
 
@@ -260,7 +260,7 @@ const filterMockData = (filters: SearchFilters): UnifiedFreelancer[] => {
 
 // Función para mapear WorkanaFreelancer a UnifiedFreelancer
 const mapWorkanaFreelancer = (
-  freelancer: WorkanaFreelancer
+  freelancer: WorkanaFreelancer,
 ): UnifiedFreelancer => ({
   id: `workana-${freelancer.name.replace(/\s+/g, "-").toLowerCase()}`,
   name: freelancer.name,
@@ -290,25 +290,26 @@ const mapWorkanaFreelancer = (
   }),
 });
 
-
-
 const fetchSearchResults = async (
-  filters: SearchFilters
+  filters: SearchFilters,
 ): Promise<UnifiedFreelancer[]> => {
   try {
     let workanaFreelancers: UnifiedFreelancer[] = [];
 
     // Try to fetch from Workana API with timeout handling
     try {
-      const workanaResponse = await apiInstance.get("/workana/freelancers", {
-        params: {
-          query: filters.query,
-          worker_type: 0,
-          ...(filters.location && { location: filters.location }),
-          ...(filters.minRate && { min_rate: filters.minRate }),
-          ...(filters.maxRate && { max_rate: filters.maxRate }),
+      const workanaResponse = await apiInstanceStrapi.get(
+        "/search/freelancers",
+        {
+          params: {
+            query: filters.query,
+            worker_type: 0,
+            ...(filters.location && { location: filters.location }),
+            ...(filters.minRate && { min_rate: filters.minRate }),
+            ...(filters.maxRate && { max_rate: filters.maxRate }),
+          },
         },
-      });
+      );
 
       const workanaData = workanaResponse.data as WorkanaResponse;
       if (workanaData?.data) {
@@ -329,53 +330,27 @@ const fetchSearchResults = async (
             freelancer.hourlyRate.trim() !== ""
           );
         });
-        
+
         workanaFreelancers = validFreelancers.map(mapWorkanaFreelancer);
       }
     } catch (workanaError) {
-      console.warn("❌ Workana API failed, will use mock data:", workanaError);
-
-      // Log more detailed error information
-      if (workanaError instanceof Error) {
-        console.error("Workana Error Details:", {
-          message: workanaError.message,
-          name: workanaError.name,
-          stack: workanaError.stack,
-        });
-        
-        // Check for timeout specifically
-        if (workanaError.message.includes('timeout')) {
-          console.error('🕐 Workana API timeout - consider checking backend performance');
-        }
-      }
-
-      // Check if it's a network error
       if (
-        workanaError &&
-        typeof workanaError === "object" &&
-        "code" in workanaError
+        workanaError instanceof Error &&
+        workanaError.message.includes("timeout")
       ) {
-        console.error("Network Error Code:", workanaError.code);
+        console.warn("Search timeout - backend may be scraping new data");
       }
     }
 
     // Log results from API
     if (workanaFreelancers.length > 0) {
       console.log(
-        `✅ Workana API: ${workanaFreelancers.length} freelancers found`
+        `✅ Workana API: ${workanaFreelancers.length} freelancers found`,
       );
     }
 
     // If API failed, return filtered mock data
     if (workanaFreelancers.length === 0) {
-      console.log("❌ Workana API failed, using MOCK DATA");
-      console.log(
-        "💡 To fix this, ensure your backend is running and NEXT_PUBLIC_API_URL is configured correctly"
-      );
-      console.log(
-        "💡 Current API URL:",
-        process.env.NEXT_PUBLIC_API_URL || "NOT CONFIGURED"
-      );
       return markAsMockData(filterMockData(filters));
     }
 
@@ -393,10 +368,10 @@ const fetchSearchResults = async (
             (freelancer.title?.toLowerCase() || "").includes(keyword) ||
             freelancer.description.toLowerCase().includes(keyword) ||
             freelancer.skills?.some((skill) =>
-              skill.toLowerCase().includes(keyword)
+              skill.toLowerCase().includes(keyword),
             ) ||
-            false
-        )
+            false,
+        ),
       );
     }
 

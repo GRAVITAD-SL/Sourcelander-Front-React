@@ -1,4 +1,4 @@
-import { IProfessionalExperience, IEducation } from '../types';
+import { IProfessionalExperience, IEducation } from "../types";
 
 // Unified Freelancer type
 export interface UnifiedFreelancer {
@@ -67,15 +67,16 @@ export interface WorkanaFreelancer {
   title?: string;
 }
 
-
-
 // Interface para la respuesta completa de cada API
 export interface WorkanaResponse {
   data: WorkanaFreelancer[];
   hasMore?: boolean;
+  meta?: {
+    total?: number;
+    page?: number;
+    hasMore?: boolean;
+  };
 }
-
-
 
 // Tipo para manejar freelancers de Workana
 export type Freelancer = WorkanaFreelancer;

@@ -4,7 +4,7 @@ import {
   WorkanaFreelancer,
   WorkanaResponse,
 } from "@/interfaces";
-import { apiInstance } from "@/services/axiosConfig";
+import { apiInstanceStrapi } from "@/services/axiosConfig";
 import { isAxiosError } from "axios";
 import { generateFreelancerExperience } from "@/utils/experienceGenerator";
 import { generateFreelancerEducation } from "@/utils/educationGenerator";
@@ -92,13 +92,13 @@ async function fetchWorkana(query: string, page: number) {
     if (includeWorkerType) params.set("worker_type", "0");
     params.set("query", normalizedQuery);
     params.set("page", String(page));
-    return `/workana/freelancers?${params.toString()}`;
+    return `/search/freelancers?${params.toString()}`;
   };
 
   const tryRequest = async (includeWorkerType: boolean) => {
     const url = buildUrl(includeWorkerType);
     try {
-      const response = await apiInstance.get(url);
+      const response = await apiInstanceStrapi.get(url);
       const data = response.data as WorkanaResponse;
       const dataArray = Array.isArray(data.data) ? data.data : [];
 
@@ -108,34 +108,19 @@ async function fetchWorkana(query: string, page: number) {
           freelancer &&
           freelancer.name &&
           freelancer.name.trim() !== "" &&
-          freelancer.description &&
-          freelancer.description.trim() !== "" &&
-          !freelancer.description.includes("Workana Freelancers") && // Filter out page content
-          freelancer.hourlyRate &&
-          freelancer.hourlyRate.trim() !== ""
+          !freelancer.description?.includes("Workana Freelancers")
         );
       });
 
       const freelancers = validFreelancers.map(mapWorkanaFreelancer);
+      const hasMore = data.meta?.hasMore ?? freelancers.length > 0;
       return {
         ok: true as const,
-        result: { freelancers, hasMore: freelancers.length > 0 },
+        result: { freelancers, hasMore },
       };
     } catch (error: unknown) {
-      // Axios error details
-      if (isAxiosError(error)) {
-        console.error("Workana HTTP Error:", {
-          status: error.response?.status,
-          data: error.response?.data,
-          url,
-        });
-
-        // Check for timeout specifically
-        if (error.message?.includes("timeout")) {
-          console.error(
-            "🕐 Workana API timeout - consider checking backend performance",
-          );
-        }
+      if (isAxiosError(error) && error.message?.includes("timeout")) {
+        console.warn("Search timeout - backend may be scraping new data");
       }
       throw error;
     }
@@ -159,35 +144,6 @@ async function fetchWorkana(query: string, page: number) {
       }
     }
 
-    console.warn("Workana fetch failed:", error);
-
-    if (error instanceof Error) {
-      console.error("Workana Error Details:", {
-        message: error.message,
-        name: error.name,
-        stack: error.stack,
-      });
-
-      // Check for timeout specifically
-      if (error.message.includes("timeout")) {
-        console.error(
-          "🕐 Workana API timeout - consider checking backend performance",
-        );
-      }
-    }
-
-    if (isAxiosError(error)) {
-      console.error("Network Error Code:", error.code);
-    }
-
-    console.log(
-      "💡 To fix this, ensure your backend is running and NEXT_PUBLIC_API_URL is configured correctly",
-    );
-    console.log(
-      "💡 Current API URL:",
-      process.env.NEXT_PUBLIC_API_URL || "NOT CONFIGURED",
-    );
-
     return { freelancers: [], hasMore: false };
   }
 }
@@ -202,10 +158,6 @@ const fetchSearchResults = async (
 
   const freelancers = [...workanaResult.freelancers];
   const hasMore = workanaResult.hasMore;
-
-  console.log(`[PAGE ${page}] Workana: ${workanaResult.freelancers.length}`, {
-    workanaError: workanaResult.freelancers.length === 0,
-  });
 
   return { freelancers, hasMore };
 };

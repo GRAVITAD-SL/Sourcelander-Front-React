@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -18,16 +18,18 @@ export default function SearchInput({
   initialValue = "",
 }: SearchInputProps) {
   const [query, setQuery] = useState(initialValue);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Sync with external value changes
-  useEffect(() => {
+  // Sync with external value changes: patrón "adjust state during render"
+  // recomendado por React (en lugar de setState dentro de un useEffect).
+  const [prevInitialValue, setPrevInitialValue] = useState(initialValue);
+  if (initialValue !== prevInitialValue) {
+    setPrevInitialValue(initialValue);
     setQuery(initialValue);
-  }, [initialValue]);
+  }
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
@@ -45,13 +47,10 @@ export default function SearchInput({
     }
   }, [query, onSearch]);
 
-  // Generate suggestions based on query
-  useEffect(() => {
-    if (query.trim().length === 0) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
+  // Generate suggestions based on query: derivado con useMemo en lugar de
+  // setState dentro de un useEffect.
+  const suggestions = useMemo(() => {
+    if (query.trim().length === 0) return [] as string[];
 
     const lowerQuery = query.toLowerCase();
     const allSuggestions: string[] = [];
@@ -84,9 +83,7 @@ export default function SearchInput({
       }
     });
 
-    setSuggestions(allSuggestions.slice(0, 8));
-    setShowSuggestions(allSuggestions.length > 0);
-    setSelectedIndex(-1);
+    return allSuggestions.slice(0, 8);
   }, [query]);
 
   // Handle keyboard navigation
@@ -155,7 +152,13 @@ export default function SearchInput({
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setQuery(value);
+            setSelectedIndex(-1);
+            // Auto-abrir sugerencias al tipear (antes lo hacía un effect)
+            setShowSuggestions(value.trim().length > 0);
+          }}
           onFocus={() => query.trim() && setShowSuggestions(true)}
           placeholder={placeholder}
           className="pl-10 pr-24 h-12 text-base rounded-r-none"

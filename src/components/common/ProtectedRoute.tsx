@@ -2,8 +2,9 @@
 
 import { useAuthStore } from "@/store/auth/authStore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuthInit } from "@/hooks/useAuthInit";
+import { useHydration } from "@/hooks/useHydration";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,12 +18,7 @@ export default function ProtectedRoute({
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const { isLoading } = useAuthInit();
-  const [isClient, setIsClient] = useState(false);
-
-  // Handle hydration
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const isClient = useHydration();
 
   // Redirect if not authenticated (only after hydration)
   useEffect(() => {

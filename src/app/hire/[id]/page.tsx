@@ -35,51 +35,57 @@ export default function HirePage() {
   const { getStoredFreelancers } = useFreelancerStorage();
 
   useEffect(() => {
-    // Try to get freelancer from localStorage first
-    const storedFreelancers = getStoredFreelancers();
-    const foundFreelancer = storedFreelancers.find(
-      (f) => f.id === freelancerId
-    );
+    // La lectura de localStorage se hace en un timer asíncrono: evita el
+    // setState sincrónico en el effect y es hidratación-segura.
+    const timer = setTimeout(() => {
+      // Try to get freelancer from localStorage first
+      const storedFreelancers = getStoredFreelancers();
+      const foundFreelancer = storedFreelancers.find(
+        (f) => f.id === freelancerId
+      );
 
-    if (foundFreelancer) {
-      setFreelancer(foundFreelancer);
-    } else {
-      // If not found in storage, create a mock freelancer with the ID
-      const mockFreelancer: UnifiedFreelancer = {
-        id: freelancerId,
-        name: "Freelancer",
-        title: "Professional",
-        location: "N/A",
-        rating: "N/A",
-        reviews: 0,
-        hourlyRate: 0,
-        availability: "N/A",
-        skills: ["JavaScript", "React", "Node.js"],
-        avatar: "",
-        imageUrl: "",
-        profileUrl: "",
-        payRate: "",
-        description: "",
-        speciality: "",
-        projectsCompleted: "",
-        verified: false,
-        experienceYears: 5,
-        memberSince: "2020-01-01",
-        professionalExperience: generateFreelancerExperience({
-          skills: ["JavaScript", "React", "Node.js"],
-          experienceYears: 5,
+      if (foundFreelancer) {
+        setFreelancer(foundFreelancer);
+      } else {
+        // If not found in storage, create a mock freelancer with the ID
+        const mockFreelancer: UnifiedFreelancer = {
+          id: freelancerId,
+          name: "Freelancer",
           title: "Professional",
-        }),
-        education: generateFreelancerEducation({
+          location: "N/A",
+          rating: "N/A",
+          reviews: 0,
+          hourlyRate: 0,
+          availability: "N/A",
           skills: ["JavaScript", "React", "Node.js"],
+          avatar: "",
+          imageUrl: "",
+          profileUrl: "",
+          payRate: "",
+          description: "",
+          speciality: "",
+          projectsCompleted: "",
+          verified: false,
           experienceYears: 5,
-          title: "Professional",
-        }),
-      };
-      setFreelancer(mockFreelancer);
-    }
+          memberSince: "2020-01-01",
+          professionalExperience: generateFreelancerExperience({
+            skills: ["JavaScript", "React", "Node.js"],
+            experienceYears: 5,
+            title: "Professional",
+          }),
+          education: generateFreelancerEducation({
+            skills: ["JavaScript", "React", "Node.js"],
+            experienceYears: 5,
+            title: "Professional",
+          }),
+        };
+        setFreelancer(mockFreelancer);
+      }
 
-    setIsLoading(false);
+      setIsLoading(false);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [freelancerId, getStoredFreelancers]);
 
   const handleGoBack = () => {

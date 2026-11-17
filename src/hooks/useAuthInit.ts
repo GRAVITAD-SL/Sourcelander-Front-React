@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth/authStore";
+import { useHydration } from "./useHydration";
 
 export const useAuthInit = () => {
   const { initializeAuth, isLoading, isAuthenticated } = useAuthStore();
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    // Mark as hydrated after first render
-    setIsHydrated(true);
-  }, []);
+  const isHydrated = useHydration();
 
   useEffect(() => {
     // Only initialize auth after hydration
