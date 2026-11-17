@@ -17,10 +17,24 @@ export default function RecommendedFreelancersCarousel({
   onViewProfile,
   searchTerm = "",
 }: RecommendedFreelancersCarouselProps) {
-  // Freelancers aleatorios estables para cuando no hay coincidencias
+  // Freelancers "aleatorios" estables para cuando no hay coincidencias.
+  // Orden determinista por hash del id: puro (sin Math.random en render) y
+  // estable entre renders/servidor-cliente.
   const stableRandomFreelancers = useMemo(() => {
-    const shuffled = [...freelancers].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 10);
+    const hash = (s: string) => {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) {
+        h = (h * 31 + s.charCodeAt(i)) | 0;
+      }
+      return h;
+    };
+    return [...freelancers]
+      .sort(
+        (a, b) =>
+          hash(String(a.id ?? a.name ?? "")) -
+          hash(String(b.id ?? b.name ?? ""))
+      )
+      .slice(0, 10);
   }, [freelancers]);
 
   // Filtrar freelancers basado en el término de búsqueda
@@ -99,12 +113,10 @@ export default function RecommendedFreelancersCarousel({
     };
   }, [filtered.length, cardsPerView, autoScroll]);
 
-  // Reset index cuando cambian los freelancers filtrados
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [filtered.length]);
-
   const maxIndex = Math.max(0, filtered.length - cardsPerView);
+  // Índice activo clamp-eado al máximo válido: reemplaza al effect que
+  // "resetaba" el índice cuando cambiaban los freelancers (setState en effect).
+  const activeIndex = Math.min(currentIndex, maxIndex);
 
   // Función para reiniciar el auto-scroll
   const restartAutoScroll = useCallback(() => {
@@ -135,8 +147,8 @@ export default function RecommendedFreelancersCarousel({
   // Obtener items visibles basado en el índice actual
   const visibleItems = useMemo(() => {
     if (filtered.length === 0) return [];
-    return filtered.slice(currentIndex, currentIndex + cardsPerView);
-  }, [filtered, currentIndex, cardsPerView]);
+    return filtered.slice(activeIndex, activeIndex + cardsPerView);
+  }, [filtered, activeIndex, cardsPerView]);
 
   // Clases CSS responsivas para el grid
   const getGridClasses = () => {
@@ -227,7 +239,7 @@ export default function RecommendedFreelancersCarousel({
                 onClick={() => goTo(i)}
                 aria-label={`Go to page ${i + 1}`}
                 className={`transition-all duration-200 rounded-full ${
-                  i === currentIndex
+                  i === activeIndex
                     ? "w-8 h-2 bg-primary shadow-md"
                     : "w-2 h-2 bg-gray-300 hover:bg-gray-400"
                 }`}
@@ -241,7 +253,7 @@ export default function RecommendedFreelancersCarousel({
         <div className="flex justify-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5">
             <span className="text-sm font-semibold text-primary">
-              {Math.min(currentIndex + 1, maxIndex + 1)}
+              {Math.min(activeIndex + 1, maxIndex + 1)}
             </span>
             <span className="text-xs text-gray-400">de</span>
             <span className="text-sm font-medium text-gray-600">

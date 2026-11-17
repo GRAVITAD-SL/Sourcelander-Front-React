@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Container from "@/components/common/Container";
 import FreelancerCard from "@/components/search/FreelancerCard";
 import FreelancerModal from "@/components/search/FreelancerModal";
@@ -140,6 +141,7 @@ const mockFreelancers: UnifiedFreelancer[] = [
 ];
 
 export default function StoredFreelancersPage() {
+  const router = useRouter();
   const [storedFreelancers, setStoredFreelancers] = useState<
     UnifiedFreelancer[]
   >([]);
@@ -156,15 +158,21 @@ export default function StoredFreelancersPage() {
   } = useFreelancerStorage();
 
   useEffect(() => {
-    const freelancers = getStoredFreelancers();
-    if (freelancers.length === 0) {
-      // Si no hay freelancers guardados, mostrar datos mockeados
-      setStoredFreelancers(mockFreelancers);
-      setShowMockData(true);
-    } else {
-      setStoredFreelancers(freelancers);
-      setShowMockData(false);
-    }
+    // Lectura de localStorage en timer asíncrono (hidratación-segura y sin
+    // setState sincrónico en el effect).
+    const timer = setTimeout(() => {
+      const freelancers = getStoredFreelancers();
+      if (freelancers.length === 0) {
+        // Si no hay freelancers guardados, mostrar datos mockeados
+        setStoredFreelancers(mockFreelancers);
+        setShowMockData(true);
+      } else {
+        setStoredFreelancers(freelancers);
+        setShowMockData(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [getStoredFreelancers]);
 
   const handleViewProfile = (id: string) => {
@@ -189,7 +197,7 @@ export default function StoredFreelancersPage() {
     setSelectedFreelancer(null);
 
     if (freelancer.id) {
-      window.location.href = `/hire/${freelancer.id}`;
+      router.push(`/hire/${freelancer.id}`);
     }
   };
 
@@ -279,7 +287,7 @@ export default function StoredFreelancersPage() {
               <p className="text-muted-foreground mb-4">
                 Start browsing freelancers to save their profiles here
               </p>
-              <Button onClick={() => (window.location.href = "/freelancer")}>
+              <Button onClick={() => router.push("/freelancer")}>
                 Browse Freelancers
               </Button>
             </div>

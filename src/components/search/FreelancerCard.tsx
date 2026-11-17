@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UnifiedFreelancer } from "@/interfaces";
+import { buildFreelancerFallbackId } from "@/lib/utils";
 import AddToCartButton from "./AddToCartButton";
 
 interface FreelancerCardProps {
@@ -28,8 +29,7 @@ export default function FreelancerCard({
   const reviews = freelancer.reviews ?? "N/A";
   const hourlyRate = freelancer.hourlyRate ?? freelancer.payRate ?? "N/A";
   const skills = freelancer.skills ?? [];
-  const id =
-    freelancer.id || `freelancer-${Math.random().toString(36).substr(2, 9)}`;
+  const id = freelancer.id || buildFreelancerFallbackId(freelancer.name);
 
   return (
     <Card className="hover:border-primary transition-all rounded-[0px] duration-200 h-full flex flex-col group cursor-pointer hover-lift min-h-[450px]">
